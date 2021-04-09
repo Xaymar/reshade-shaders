@@ -123,13 +123,6 @@ uniform float pHSVVal <
 	ui_step = 0.001;
 > = 1.0;
 
-uniform float pYUVLuma <
-	ui_category = "YUV Correction";
-	ui_type = "slider";
-	ui_label = "Luminosity";
-	ui_min = 0.0; ui_max = 10.0;
-	ui_step = 0.001;
-> = 1.0;
 uniform float pYUVChromaRotation <
 	ui_category = "YUV Correction";
 	ui_type = "slider";
@@ -141,6 +134,13 @@ uniform float pYUVChromaMultiplier <
 	ui_category = "YUV Correction";
 	ui_type = "slider";
 	ui_label = "Multply Chroma";
+	ui_min = 0.0; ui_max = 10.0;
+	ui_step = 0.001;
+> = 1.0;
+uniform float pYUVLuma <
+	ui_category = "YUV Correction";
+	ui_type = "slider";
+	ui_label = "Luminosity";
 	ui_min = 0.0; ui_max = 10.0;
 	ui_step = 0.001;
 > = 1.0;
