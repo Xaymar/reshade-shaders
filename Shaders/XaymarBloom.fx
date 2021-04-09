@@ -233,32 +233,6 @@ float4 Bloom(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 	return dither(v, uv, 255.);
 }
 
-
-//------------------------------------------------------------------------------
-// Technique: Light Bloom
-//------------------------------------------------------------------------------
-/*float4 PSLightBloom(DefaultVertexData vtx) : TARGET {
-	// Bloom blending is not that simple.
-	float4 vo = SampleLayer(0, vtx.uv);
-	float4 v = vo;
-	for (uint i = 1; i < uint(Layers); i++) {
-		float4 vl = SampleLayer(i, vtx.uv);
-		float4 vl_hsv = RGBtoHSV(vl);
-
-		float luminosity = realistic_brightness_curve(vl_hsv.z);
-		vl_hsv.y *= (1. - luminosity);
-		float4 vl_fin = HSVtoRGB(vl_hsv);
-
-		v += vl_fin;
-	}
-
-	if (PreserveAlpha) {
-		return float4(v.xyz, vo.a);
-	} else {
-		return v;
-	}
-}*/
-
 //----------------------------------------------------------------------------//
 // Technique
 technique PAABloom <
