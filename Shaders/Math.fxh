@@ -48,3 +48,11 @@ float2 rotate2D(float2 xy, float ang) {
 	);
 	return mul(mat, xy);
 }
+
+float fix_gamma(float v) {
+	if (v < 0.0) {
+		return (-v + 1.0);
+	} else {
+		return (1.0 / (v + 1.0));
+	}
+}

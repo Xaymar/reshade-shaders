@@ -68,20 +68,12 @@ uniform float4 pGamma <
 	ui_step = 0.001;
 > = float4(0., 0., 0., 0.);
 
-float get_corrected_gamma(float v) {
-	if (v < 0.0) {
-		return (-v + 1.0);
-	} else {
-		return (1.0 / (v + 1.0));
-	}
-}
-
 float4 Gamma(float4 v) {
 	float4 gam = float4(
-		get_corrected_gamma(pGamma.r),
-		get_corrected_gamma(pGamma.g),
-		get_corrected_gamma(pGamma.b),
-		get_corrected_gamma(pGamma.a));
+		fix_gamma(pGamma.r),
+		fix_gamma(pGamma.g),
+		fix_gamma(pGamma.b),
+		fix_gamma(pGamma.a));
 	v.rgb = pow(pow(v.rgb, gam.rgb), gam.aaa);
 	return v;
 }
@@ -252,33 +244,69 @@ float4 HSVCorrection(float4 v) {
 #endif
 
 #if COLORGRADING_ENABLE_YUVCORRECTION == 1
+uniform float pYUVLuminosity <
+	ui_category = "YUV Correction";
+	ui_type = "slider";
+	ui_label = "Y Multiplier";
+	ui_min = 0.0; ui_max = 10.0;
+	ui_step = 0.001;
+> = 1.0;
 uniform float pYUVChromaRotation <
 	ui_category = "YUV Correction";
 	ui_type = "slider";
-	ui_label = "Rotate Chroma";
+	ui_label = "UV Rotation";
 	ui_min = -180.0; ui_max = 180.0;
 	ui_step = 0.001;
 > = 0.0;
 uniform float pYUVChromaMultiplier <
 	ui_category = "YUV Correction";
 	ui_type = "slider";
-	ui_label = "Multply Chroma";
+	ui_label = "UV Multiplier";
 	ui_min = 0.0; ui_max = 10.0;
 	ui_step = 0.001;
 > = 1.0;
-uniform float pYUVLuminosity <
+
+uniform float4 pYUVGamma <
 	ui_category = "YUV Correction";
 	ui_type = "slider";
-	ui_label = "Luminosity";
+	ui_label = "Gamma (Y, U, V, All)";
+	ui_min = -1.0; ui_max = 10.0;
+	ui_step = 0.001;
+> = float4(0., 0., 0., 0.);
+
+uniform float4 pYUVContrast <
+	ui_category = "YUV Correction";
+	ui_type = "slider";
+	ui_label = "Contrast (Y, U, V, All)";
 	ui_min = 0.0; ui_max = 10.0;
 	ui_step = 0.001;
 > = 1.0;
 
 float4 YUVCorrection(float4 v) {
 	v = YUVAtoRGBAf(v, RGB_YUV_709);
+	// Y Multiplier (Could be considered as Luma)
 	v.r *= pYUVLuminosity;
+
+	// UV Rotation (Could be considered Hue)
 	v.gb = rotate2D(v.gb, _DEG_TO_RAD(pYUVChromaRotation));
+
+	// UV Multiplier (Could be considered Saturation)
 	v.gb *= pYUVChromaMultiplier;
+
+	// YUV Gamma
+	float4 gam = float4(
+		fix_gamma(pYUVGamma.r),
+		fix_gamma(pYUVGamma.g),
+		fix_gamma(pYUVGamma.b),
+		fix_gamma(pYUVGamma.a));
+	v.rgb = pow(pow(abs(v.rgb), gam.rgb), gam.aaa) * sign(v.rgb);
+
+	// YUV Contrast
+	v.rgb -= float3(.5, 0, 0);
+	v.rgb *= max(pYUVContrast.rgb, 0);
+	v.rgb *= max(pYUVContrast.a, 0);
+	v.rgb += float3(.5, 0, 0);
+
 	return RGBAtoYUVAf(v, YUV_709_RGB);
 }
 #endif
