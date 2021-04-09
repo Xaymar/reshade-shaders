@@ -71,7 +71,7 @@ uniform float pLayer2Strength <
 	ui_label = "Layer 2 Strength";
 	ui_min = 0.0; ui_max = 1.0;
 	ui_step = 0.001;
-> = 1.0;
+> = 0.75;
 #if DUALFILTERING_ENABLE_8PX == 1
 uniform float pLayer3Strength <
 	ui_category = "Layers";
@@ -79,7 +79,7 @@ uniform float pLayer3Strength <
 	ui_label = "Layer 3 Strength";
 	ui_min = 0.0; ui_max = 1.0;
 	ui_step = 0.001;
-> = 1.0;
+> = 0.5;
 #if DUALFILTERING_ENABLE_16PX == 1
 uniform float pLayer4Strength <
 	ui_category = "Layers";
@@ -87,7 +87,7 @@ uniform float pLayer4Strength <
 	ui_label = "Layer 4 Strength";
 	ui_min = 0.0; ui_max = 1.0;
 	ui_step = 0.001;
-> = 1.0;
+> = 0.25;
 #endif
 #endif
 #endif
@@ -236,8 +236,8 @@ float4 Bloom(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 //----------------------------------------------------------------------------//
 // Technique
 technique PAABloom <
-	ui_label = "Realistic Bloom (by Xaymar)";
-	ui_tooltip = "Tries to approximate 'real world' Bloom through fast methods.";
+	ui_label = "Photorealistic Bloom (by Xaymar)";
+	ui_tooltip = "Tries to approximate 'photorealistic' Bloom through fast methods.";
 > {
 	pass Bloom {
         VertexShader = PostProcessVS;
