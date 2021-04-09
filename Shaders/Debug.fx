@@ -59,14 +59,14 @@ float4 DebugDepthBuffer(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : 
     if (_z_export == 0) {
 	    output = float4(depth, depth, depth, 1.0);
     } else if (_z_export == 1) {
-        float dR = (depth * 255.) / 255.;
-        float dG = (dR * 255.) % 1.;
-        float dB = (dG * 255.) % 1.;
+        float dR = depth;
+        float dG = frac(dR * 255.);
+        float dB = frac(dG * 255.);
         output = float4(dR, dG, dB, 1.0);
     } else if (_z_export == 2) {
-        float dY = (depth * 255.) / 255.;
-        float dU = (dY * 255.) % 1.;
-        float dV = (dU * 255.) % 1.;
+        float dY = depth;
+        float dU = frac(dY * 255.);
+        float dV = frac(dU * 255.);
         output = YUVAtoRGBA(float4(dY, dU, dV, 1.0), YUV_709_RGB);
     } else {
         output = float4(1.0, 0.0, 1.0, 1.0);
