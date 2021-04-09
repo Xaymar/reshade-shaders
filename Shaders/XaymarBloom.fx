@@ -147,7 +147,8 @@ float realistic_brightness_curve(float v) {
 	v = clamp(v - pThreshold, 0., 1.) / max(1. - pThreshold, .000001);
 
 	// Create an inverse curve that is initially weak, but then picks up fast.
-	v = v * v * v * v; // Add any number of * v here, it strengthens the curve.
+	v *= v;
+	v *= v;
 
 	return v;
 }
