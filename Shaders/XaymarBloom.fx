@@ -45,7 +45,7 @@ uniform float pStrength <
 > = 1.0;
 uniform float pDechromaStrength <
 	ui_type = "slider";
-	ui_label = "Strength";
+	ui_label = "De-Chroma Strength";
 	ui_min = 0.0; ui_max = 10.0;
 	ui_step = 0.001;
 > = 1.0;
@@ -94,39 +94,45 @@ float4 Bloom(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 	float4 b1 = tex2Dlod(ReShade::BackBuffer, float4(uv, 0, 0));
 
 	float4 b2 = Blur2(uv);
+	float4 b4 = Blur4(uv);
+	float4 b8 = Blur8(uv);
+
 	float4 b2yuv = RGBAtoYUVAf(b2, RGB_YUV_709);
-	float b2w = realistic_brightness_curve(b2yuv.r);
-	b2yuv.gb *= saturate(1. - b2w * pDechromaStrength);
+	float4 b4yuv = RGBAtoYUVAf(b4, RGB_YUV_709);
+	float4 b8yuv = RGBAtoYUVAf(b8, RGB_YUV_709);
+
+	float b2weight = realistic_brightness_curve(b2yuv.r);
+	float b4weight = realistic_brightness_curve(b4yuv.r);
+	float b8weight = realistic_brightness_curve(b8yuv.r);
+
+	b2yuv.gb *= clamp(1. - b2weight * pDechromaStrength, 0., 1.);
 	b2 = YUVAtoRGBAf(b2yuv, YUV_709_RGB);
+	b2 *= b2weight * pStrength;
 	if (pDebug == DEBUG_BLUR2_COLOR) {
 		return b2;
 	} else if (pDebug == DEBUG_BLUR2_WEIGHT) {
-		return b2w;
+		return b2weight;
 	}
 
-	float4 b4 = Blur4(uv);
-	float4 b4yuv = RGBAtoYUVAf(b4, RGB_YUV_709);
-	float b4w = realistic_brightness_curve(b4yuv.r);
-	b4yuv.gb *= saturate(1. - b4w * pDechromaStrength);
+	b4yuv.gb *= clamp(1. - b4weight * pDechromaStrength, 0., 1.);
 	b4 = YUVAtoRGBAf(b4yuv, YUV_709_RGB);
+	b4 *= b4weight * pStrength;
 	if (pDebug == DEBUG_BLUR4_COLOR) {
 		return b4;
 	} else if (pDebug == DEBUG_BLUR4_WEIGHT) {
-		return b4w;
+		return b4weight;
 	}
 
-	float4 b8 = Blur8(uv);
-	float4 b8yuv = RGBAtoYUVAf(b8, RGB_YUV_709);
-	float b8w = realistic_brightness_curve(b8yuv.r);
-	b8yuv.gb *= saturate(1. - b8w * pDechromaStrength);
+	b8yuv.gb *= clamp(1. - b8weight * pDechromaStrength, 0., 1.);
 	b8 = YUVAtoRGBAf(b8yuv, YUV_709_RGB);
+	b8 *= b8weight * pStrength;
 	if (pDebug == DEBUG_BLUR8_COLOR) {
 		return b8;
 	} else if (pDebug == DEBUG_BLUR8_WEIGHT) {
-		return b8w;
+		return b8weight;
 	}
 
-	return b1 + b2*b2w*pStrength + b4*b4w*pStrength + b8*b8w*pStrength;
+	return dither(b1 + b2 + b4 + b8, uv, 255.);
 }
 
 
