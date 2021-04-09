@@ -31,12 +31,13 @@
 #include "ConvertRGBYUV.fxh"
 #include "ConvertRGBHSV.fxh"
 
-#define TINT_VALUE_LINEAR 0
-#define TINT_VALUE_EXP 1
-#define TINT_VALUE_EXP2 2
-#define TINT_VALUE_LOG 3
-#define TINT_VALUE_LOG10 4
+//----------------------------------------------------------------------------//
+// Lift
+#ifndef COLORGRADING_ENABLE_LIFT
+	#define COLORGRADING_ENABLE_LIFT 1
+#endif
 
+#if COLORGRADING_ENABLE_LIFT == 1
 uniform float4 pLift <
 	ui_category = "Grading";
 	ui_type = "drag";
@@ -44,6 +45,21 @@ uniform float4 pLift <
 	ui_min = -10.0; ui_max = 10.0;
 	ui_step = 0.001;
 > = float4(0., 0., 0., 0.);
+
+float4 Lift(float4 v) {
+	v.rgb = pLift.aaa + v.rgb;
+	v.rgb = pLift.rgb + v.rgb;
+	return v;
+}
+#endif
+
+//----------------------------------------------------------------------------//
+// Gamma
+#ifndef COLORGRADING_ENABLE_GAMMA
+	#define COLORGRADING_ENABLE_GAMMA 1
+#endif
+
+#if COLORGRADING_ENABLE_GAMMA == 1
 uniform float4 pGamma <
 	ui_category = "Grading";
 	ui_type = "drag";
@@ -51,6 +67,33 @@ uniform float4 pGamma <
 	ui_min = -10.0; ui_max = 10.0;
 	ui_step = 0.001;
 > = float4(0., 0., 0., 0.);
+
+float get_corrected_gamma(float v) {
+	if (v < 0.0) {
+		return (-v + 1.0);
+	} else {
+		return (1.0 / (v + 1.0));
+	}
+}
+
+float4 Gamma(float4 v) {
+	float4 gam = float4(
+		get_corrected_gamma(pGamma.r),
+		get_corrected_gamma(pGamma.g),
+		get_corrected_gamma(pGamma.b),
+		get_corrected_gamma(pGamma.a));
+	v.rgb = pow(pow(v.rgb, gam.rgb), gam.aaa);
+	return v;
+}
+#endif
+
+//----------------------------------------------------------------------------//
+// Gain
+#ifndef COLORGRADING_ENABLE_GAIN
+	#define COLORGRADING_ENABLE_GAIN 1
+#endif
+
+#if COLORGRADING_ENABLE_GAIN == 1
 uniform float4 pGain <
 	ui_category = "Grading";
 	ui_type = "drag";
@@ -58,6 +101,21 @@ uniform float4 pGain <
 	ui_min = 0.0; ui_max = 10.0;
 	ui_step = 0.001;
 > = float4(1., 1., 1., 1.);
+
+float4 Gain(float4 v) {
+	v.rgb *= pGain.rgb;
+	v.rgb *= pGain.a;
+	return v;
+}
+#endif
+
+//----------------------------------------------------------------------------//
+// Offset
+#ifndef COLORGRADING_ENABLE_OFFSET
+	#define COLORGRADING_ENABLE_OFFSET 1
+#endif
+
+#if COLORGRADING_ENABLE_OFFSET == 1
 uniform float4 pOffset <
 	ui_category = "Grading";
 	ui_type = "drag";
@@ -65,6 +123,27 @@ uniform float4 pOffset <
 	ui_min = -10.0; ui_max = 10.0;
 	ui_step = 0.001;
 > = float4(0., 0., 0., 0.);
+
+float4 Offset(float4 v) {
+	v.rgb = pOffset.aaa + v.rgb;
+	v.rgb = pOffset.rgb + v.rgb;
+	return v;
+}
+#endif
+
+//----------------------------------------------------------------------------//
+// Tint
+#ifndef COLORGRADING_ENABLE_TINT
+	#define COLORGRADING_ENABLE_TINT 1
+#endif
+
+#if COLORGRADING_ENABLE_TINT == 1
+#define TINT_VALUE_LINEAR 0
+#define TINT_VALUE_EXP 1
+#define TINT_VALUE_EXP2 2
+#define TINT_VALUE_LOG 3
+#define TINT_VALUE_LOG10 4
+
 uniform float4 pTintLow <
 	ui_category = "Tint";
 	ui_type = "drag";
@@ -101,98 +180,6 @@ uniform float pTintValueExp2Density <
 	ui_max = 10.;
 > = 1.;
 
-uniform float pHSVHue <
-	ui_category = "HSV Correction";
-	ui_type = "slider";
-	ui_label = "Hue Shift";
-	ui_min = -180.0; ui_max = 180.0;
-	ui_step = 0.001;
-> = 0.0;
-uniform float pHSVSat <
-	ui_category = "HSV Correction";
-	ui_type = "slider";
-	ui_label = "Saturation";
-	ui_min = 0.0; ui_max = 10.0;
-	ui_step = 0.001;
-> = 1.0;
-uniform float pHSVVal <
-	ui_category = "HSV Correction";
-	ui_type = "slider";
-	ui_label = "Lightness";
-	ui_min = 0.0; ui_max = 10.0;
-	ui_step = 0.001;
-> = 1.0;
-
-uniform float pYUVChromaRotation <
-	ui_category = "YUV Correction";
-	ui_type = "slider";
-	ui_label = "Rotate Chroma";
-	ui_min = -180.0; ui_max = 180.0;
-	ui_step = 0.001;
-> = 0.0;
-uniform float pYUVChromaMultiplier <
-	ui_category = "YUV Correction";
-	ui_type = "slider";
-	ui_label = "Multply Chroma";
-	ui_min = 0.0; ui_max = 10.0;
-	ui_step = 0.001;
-> = 1.0;
-uniform float pYUVLuma <
-	ui_category = "YUV Correction";
-	ui_type = "slider";
-	ui_label = "Luminosity";
-	ui_min = 0.0; ui_max = 10.0;
-	ui_step = 0.001;
-> = 1.0;
-
-uniform float pContrast <
-	ui_category = "Correction";
-	ui_type = "slider";
-	ui_label = "Contrast";
-	ui_min = 0.0; ui_max = 10.0;
-	ui_step = 0.001;
-> = 1.0;
-
-uniform bool _dither <
-    ui_label = "Dither";
-> = false;
-
-float get_corrected_gamma(float v) {
-	if (v < 0.0) {
-		return (-v + 1.0);
-	} else {
-		return (1.0 / (v + 1.0));
-	}
-}
-
-float4 Lift(float4 v) {
-	v.rgb = pLift.aaa + v.rgb;
-	v.rgb = pLift.rgb + v.rgb;
-	return v;
-}
-
-float4 Gamma(float4 v) {
-	float4 gam = float4(
-		get_corrected_gamma(pGamma.r),
-		get_corrected_gamma(pGamma.g),
-		get_corrected_gamma(pGamma.b),
-		get_corrected_gamma(pGamma.a));
-	v.rgb = pow(pow(v.rgb, gam.rgb), gam.aaa);
-	return v;
-}
-
-float4 Gain(float4 v) {
-	v.rgb *= pGain.rgb;
-	v.rgb *= pGain.a;
-	return v;
-}
-
-float4 Offset(float4 v) {
-	v.rgb = pOffset.aaa + v.rgb;
-	v.rgb = pOffset.rgb + v.rgb;
-	return v;
-}
-
 float4 Tint(float4 v) {
 	float value = RGBtoHSV(v).z;
 	float4 tint = float4(0,0,0,1);
@@ -218,6 +205,36 @@ float4 Tint(float4 v) {
 	v.rgb *= tint.aaa;
 	return v;
 }
+#endif
+
+//----------------------------------------------------------------------------//
+// HSV Correction
+#ifndef COLORGRADING_ENABLE_HSVCORRECTION
+	#define COLORGRADING_ENABLE_HSVCORRECTION 1
+#endif
+
+#if COLORGRADING_ENABLE_HSVCORRECTION == 1
+uniform float pHSVHue <
+	ui_category = "HSV Correction";
+	ui_type = "slider";
+	ui_label = "Hue Shift";
+	ui_min = -180.0; ui_max = 180.0;
+	ui_step = 0.001;
+> = 0.0;
+uniform float pHSVSat <
+	ui_category = "HSV Correction";
+	ui_type = "slider";
+	ui_label = "Saturation";
+	ui_min = 0.0; ui_max = 10.0;
+	ui_step = 0.001;
+> = 1.0;
+uniform float pHSVVal <
+	ui_category = "HSV Correction";
+	ui_type = "slider";
+	ui_label = "Lightness";
+	ui_min = 0.0; ui_max = 10.0;
+	ui_step = 0.001;
+> = 1.0;
 
 float4 HSVCorrection(float4 v) {
 	float4 v1 = RGBtoHSV(v);
@@ -226,31 +243,108 @@ float4 HSVCorrection(float4 v) {
 	v1.b *= pHSVVal;
 	return HSVtoRGB(v1);
 }
+#endif
+
+//----------------------------------------------------------------------------//
+// YUV Correction
+#ifndef COLORGRADING_ENABLE_YUVCORRECTION
+	#define COLORGRADING_ENABLE_YUVCORRECTION 1
+#endif
+
+#if COLORGRADING_ENABLE_YUVCORRECTION == 1
+uniform float pYUVChromaRotation <
+	ui_category = "YUV Correction";
+	ui_type = "slider";
+	ui_label = "Rotate Chroma";
+	ui_min = -180.0; ui_max = 180.0;
+	ui_step = 0.001;
+> = 0.0;
+uniform float pYUVChromaMultiplier <
+	ui_category = "YUV Correction";
+	ui_type = "slider";
+	ui_label = "Multply Chroma";
+	ui_min = 0.0; ui_max = 10.0;
+	ui_step = 0.001;
+> = 1.0;
+uniform float pYUVLuminosity <
+	ui_category = "YUV Correction";
+	ui_type = "slider";
+	ui_label = "Luminosity";
+	ui_min = 0.0; ui_max = 10.0;
+	ui_step = 0.001;
+> = 1.0;
 
 float4 YUVCorrection(float4 v) {
 	v = YUVAtoRGBAf(v, RGB_YUV_709);
-	v.r *= pYUVLuma;
+	v.r *= pYUVLuminosity;
 	v.gb = rotate2D(v.gb, _DEG_TO_RAD(pYUVChromaRotation));
 	v.gb *= pYUVChromaMultiplier;
 	return RGBAtoYUVAf(v, YUV_709_RGB);
 }
+#endif
+
+//----------------------------------------------------------------------------//
+// Correction
+#ifndef COLORGRADING_ENABLE_CORRECTION
+	#define COLORGRADING_ENABLE_CORRECTION 1
+#endif
+
+#if COLORGRADING_ENABLE_CORRECTION == 1
+uniform float pContrast <
+	ui_category = "Correction";
+	ui_type = "slider";
+	ui_label = "Contrast";
+	ui_min = 0.0; ui_max = 10.0;
+	ui_step = 0.001;
+> = 1.0;
 
 float4 Correction(float4 v) {
 	v.rgb = ((v.rgb - 0.5) * max(pContrast, 0)) + 0.5;
 	return v;
 }
+#endif
+
+//----------------------------------------------------------------------------//
+// Default Functionality
+
+uniform bool _dither <
+    ui_label = "Dither";
+> = false;
+
+float4 Grade(float4 v) {
+	#if COLORGRADING_ENABLE_LIFT == 1
+	v = Lift(v);
+	#endif
+	#if COLORGRADING_ENABLE_GAMMA == 1
+	v = Gamma(v);
+	#endif
+	#if COLORGRADING_ENABLE_GAIN == 1
+	v = Gain(v);
+	#endif
+	#if COLORGRADING_ENABLE_OFFSET == 1
+	v = Offset(v);
+	#endif
+	#if COLORGRADING_ENABLE_TINT == 1
+	v = Tint(v);
+	#endif
+	#if COLORGRADING_ENABLE_HSVCORRECTION == 1
+	v = HSVCorrection(v);
+	#endif
+	#if COLORGRADING_ENABLE_YUVCORRECTION == 1
+	v = YUVCorrection(v);
+	#endif
+	#if COLORGRADING_ENABLE_CORRECTION == 1
+	v = Correction(v);
+	#endif
+
+	return v;
+}
 
 float4 PS_ColorGrade(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV_Target {
 	float4 v = tex2Dlod(ReShade::BackBuffer, float4(texcoord, 0, 0));
-	v = Lift(v);
-	v = Gamma(v);
-	v = Gain(v);
-	v = Offset(v);
-	v = Tint(v);
-	v = HSVCorrection(v);
-	v = YUVCorrection(v);
-	v = Correction(v);
+	v = Grade(v);
 
+	// Apply Dithering
 	if (_dither) {
 		return dither(v, texcoord, 255);
 	} else {
