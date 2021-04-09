@@ -54,3 +54,19 @@ float3 YUVtoRGB(float3 yuv, float3x3 m) {
 float4 YUVAtoRGBA(float4 yuva, float3x3 m) {
 	return float4(YUVtoRGB(yuva.rgb, m), yuva.a);
 }
+
+float3 RGBtoYUVf(float3 rgb, float3x3 m) {
+	return mul(m, rgb);
+}
+
+float4 RGBAtoYUVAf(float4 rgba, float3x3 m) {
+	return float4(RGBtoYUVf(rgba.rgb, m), rgba.a);
+}
+
+float3 YUVtoRGBf(float3 yuv, float3x3 m) {
+	return mul(m, yuv.rgb);
+}
+
+float4 YUVAtoRGBAf(float4 yuva, float3x3 m) {
+	return float4(YUVtoRGBf(yuva.rgb, m), yuva.a);
+}
