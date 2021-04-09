@@ -91,7 +91,7 @@ sampler2D sBlurDownUp2 {
 };
 
 float4 PassBlurDown2(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
-	return DualFilteringDown(ReShade::BackBuffer, uv, DUALFILTERING_1);
+	return DualFilteringDown(ReShade::BackBuffer, uv, DUALFILTERING_2);
 }
 float4 PassBlurUp2(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 	return DualFilteringUp(sBlurDownUp2, uv, DUALFILTERING_2);
@@ -122,7 +122,7 @@ sampler2D sBlurDownUp4 {
 };
 
 float4 PassBlurDown4(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
-	return DualFilteringDown(sBlurDownUp2, uv, DUALFILTERING_2);
+	return DualFilteringDown(sBlurDownUp2, uv, DUALFILTERING_4);
 }
 float4 PassBlurUp4(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 	return DualFilteringUp(sBlurDownUp4, uv, DUALFILTERING_4);
@@ -153,7 +153,7 @@ sampler2D sBlurDownUp8 {
 };
 
 float4 PassBlurDown8(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
-	return DualFilteringDown(sBlurDownUp4, uv, DUALFILTERING_4);
+	return DualFilteringDown(sBlurDownUp4, uv, DUALFILTERING_8);
 }
 float4 PassBlurUp8(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 	return DualFilteringUp(sBlurDownUp8, uv, DUALFILTERING_8);
@@ -184,7 +184,7 @@ sampler2D sBlurDownUp16 {
 };
 
 float4 PassBlurDown16(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
-	return DualFilteringDown(sBlurDownUp8, uv, DUALFILTERING_8);
+	return DualFilteringDown(sBlurDownUp8, uv, DUALFILTERING_16);
 }
 float4 PassBlurUp16(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 	return DualFilteringUp(sBlurDownUp16, uv, DUALFILTERING_16);
