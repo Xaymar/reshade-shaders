@@ -25,126 +25,6 @@
 
 // Dual Filtering Blur for advanced effects.
 
-texture2D tBlurDownUp2 <
-	pooled = true;
-> {
-	Width = BUFFER_WIDTH / 2;
-	Height = BUFFER_HEIGHT / 2;
-	MipLevels = 1;
-	Format = RGB10A2;
-};
-sampler2D sBlurDownUp2 {
-	Texture = tBlurDownUp2;
-	MagFilter = LINEAR;
-	MinFilter = LINEAR;
-	MipFilter = LINEAR;
-	MinLOD = 0.0f;
-	MaxLOD = 0.0f;
-	AddressU = CLAMP;
-	AddressV = CLAMP;
-	AddressW = CLAMP;
-};
-
-texture2D tBlurDownUp4 <
-	pooled = true;
-> {
-	Width = BUFFER_WIDTH / 4;
-	Height = BUFFER_HEIGHT / 4;
-	MipLevels = 1;
-	Format = RGB10A2;
-};
-sampler2D sBlurDownUp4 {
-	Texture = tBlurDownUp4;
-	MagFilter = LINEAR;
-	MinFilter = LINEAR;
-	MipFilter = LINEAR;
-	MinLOD = 0.0f;
-	MaxLOD = 0.0f;
-	AddressU = CLAMP;
-	AddressV = CLAMP;
-	AddressW = CLAMP;
-};
-
-texture2D tBlurDownUp8 <
-	pooled = true;
-> {
-	Width = BUFFER_WIDTH / 8;
-	Height = BUFFER_HEIGHT / 8;
-	MipLevels = 1;
-	Format = RGB10A2;
-};
-sampler2D sBlurDownUp8 {
-	Texture = tBlurDownUp8;
-	MagFilter = LINEAR;
-	MinFilter = LINEAR;
-	MipFilter = LINEAR;
-	MinLOD = 0.0f;
-	MaxLOD = 0.0f;
-	AddressU = CLAMP;
-	AddressV = CLAMP;
-	AddressW = CLAMP;
-};
-
-texture2D tBlur2px <
-	pooled = true;
-> {
-	Width = BUFFER_WIDTH;
-	Height = BUFFER_HEIGHT;
-	MipLevels = 1;
-	Format = RGB10A2;
-};
-sampler2D sBlur2px {
-	Texture = tBlur2px;
-	MagFilter = LINEAR;
-	MinFilter = LINEAR;
-	MipFilter = LINEAR;
-	MinLOD = 0.0f;
-	MaxLOD = 0.0f;
-	AddressU = CLAMP;
-	AddressV = CLAMP;
-	AddressW = CLAMP;
-};
-
-texture2D tBlur4px <
-	pooled = true;
-> {
-	Width = BUFFER_WIDTH;
-	Height = BUFFER_HEIGHT;
-	MipLevels = 1;
-	Format = RGB10A2;
-};
-sampler2D sBlur4px {
-	Texture = tBlur4px;
-	MagFilter = LINEAR;
-	MinFilter = LINEAR;
-	MipFilter = LINEAR;
-	MinLOD = 0.0f;
-	MaxLOD = 0.0f;
-	AddressU = CLAMP;
-	AddressV = CLAMP;
-	AddressW = CLAMP;
-};
-
-texture2D tBlur8px <
-	pooled = true;
-> {
-	Width = BUFFER_WIDTH;
-	Height = BUFFER_HEIGHT;
-	MipLevels = 1;
-	Format = RGB10A2;
-};
-sampler2D sBlur8px {
-	Texture = tBlur8px;
-	MagFilter = LINEAR;
-	MinFilter = LINEAR;
-	MipFilter = LINEAR;
-	MinLOD = 0.0f;
-	MaxLOD = 0.0f;
-	AddressU = CLAMP;
-	AddressV = CLAMP;
-	AddressW = CLAMP;
-};
-
 #define DUALFILTERING_1 (float2(BUFFER_RCP_WIDTH, BUFFER_RCP_HEIGHT))
 #define DUALFILTERING_2 (float2(BUFFER_RCP_WIDTH, BUFFER_RCP_HEIGHT) * 2)
 #define DUALFILTERING_4 (float2(BUFFER_RCP_WIDTH, BUFFER_RCP_HEIGHT) * 4)
@@ -182,46 +62,231 @@ float4 DualFilteringUp(sampler2D tex, float2 uv, float2 halfTexel) {
 	return v;
 }
 
+#ifndef DUALFILTERING_ENABLE_2PX
+	#define DUALFILTERING_ENABLE_2PX 1
+#endif
+#if DUALFILTERING_ENABLE_2PX == 1
+texture2D tBlurDownUp2 <
+	pooled = true;
+> {
+	Width = BUFFER_WIDTH / 2;
+	Height = BUFFER_HEIGHT / 2;
+	MipLevels = 1;
+	Format = RGB10A2;
+};
+sampler2D sBlurDownUp2 {
+	Texture = tBlurDownUp2;
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+	MinLOD = 0.0f;
+	MaxLOD = 0.0f;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
+texture2D tBlur2px <
+	pooled = true;
+> {
+	Width = BUFFER_WIDTH;
+	Height = BUFFER_HEIGHT;
+	MipLevels = 1;
+	Format = RGB10A2;
+};
+sampler2D sBlur2px {
+	Texture = tBlur2px;
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+	MinLOD = 0.0f;
+	MaxLOD = 0.0f;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
 float4 PassBlurDown2(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 	return DualFilteringDown(ReShade::BackBuffer, uv, DUALFILTERING_1);
 }
-
-float4 PassBlurDown4(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
-	return DualFilteringDown(sBlurDownUp2, uv, DUALFILTERING_2);
-}
-
-float4 PassBlurDown8(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
-	return DualFilteringDown(sBlurDownUp4, uv, DUALFILTERING_4);
-}
-
-float4 PassBlurUp8(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
-	return DualFilteringUp(sBlurDownUp8, uv, DUALFILTERING_8);
-}
-
-float4 PassBlurUp4(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
-	return DualFilteringUp(sBlurDownUp4, uv, DUALFILTERING_4);
-}
-
 float4 PassBlurUp2(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 	return DualFilteringUp(sBlurDownUp2, uv, DUALFILTERING_2);
 }
-
 float4 Blur2(float2 uv) {
 	return tex2D(sBlur2px, uv);
 }
 
+
+#ifndef DUALFILTERING_ENABLE_4PX
+	#define DUALFILTERING_ENABLE_4PX 1
+#endif
+#if DUALFILTERING_ENABLE_4PX == 1
+texture2D tBlurDownUp4 <
+	pooled = true;
+> {
+	Width = BUFFER_WIDTH / 4;
+	Height = BUFFER_HEIGHT / 4;
+	MipLevels = 1;
+	Format = RGB10A2;
+};
+sampler2D sBlurDownUp4 {
+	Texture = tBlurDownUp4;
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+	MinLOD = 0.0f;
+	MaxLOD = 0.0f;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
+texture2D tBlur4px <
+	pooled = true;
+> {
+	Width = BUFFER_WIDTH;
+	Height = BUFFER_HEIGHT;
+	MipLevels = 1;
+	Format = RGB10A2;
+};
+sampler2D sBlur4px {
+	Texture = tBlur4px;
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+	MinLOD = 0.0f;
+	MaxLOD = 0.0f;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
+float4 PassBlurDown4(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
+	return DualFilteringDown(sBlurDownUp2, uv, DUALFILTERING_2);
+}
+float4 PassBlurUp4(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
+	return DualFilteringUp(sBlurDownUp4, uv, DUALFILTERING_4);
+}
 float4 Blur4(float2 uv) {
 	return tex2D(sBlur4px, uv);
 }
 
+#ifndef DUALFILTERING_ENABLE_8PX
+	#define DUALFILTERING_ENABLE_8PX 1
+#endif
+#if DUALFILTERING_ENABLE_8PX == 1
+texture2D tBlurDownUp8 <
+	pooled = true;
+> {
+	Width = BUFFER_WIDTH / 8;
+	Height = BUFFER_HEIGHT / 8;
+	MipLevels = 1;
+	Format = RGB10A2;
+};
+sampler2D sBlurDownUp8 {
+	Texture = tBlurDownUp8;
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+	MinLOD = 0.0f;
+	MaxLOD = 0.0f;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
+texture2D tBlur8px <
+	pooled = true;
+> {
+	Width = BUFFER_WIDTH;
+	Height = BUFFER_HEIGHT;
+	MipLevels = 1;
+	Format = RGB10A2;
+};
+sampler2D sBlur8px {
+	Texture = tBlur8px;
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+	MinLOD = 0.0f;
+	MaxLOD = 0.0f;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
+float4 PassBlurDown8(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
+	return DualFilteringDown(sBlurDownUp4, uv, DUALFILTERING_4);
+}
+float4 PassBlurUp8(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
+	return DualFilteringUp(sBlurDownUp8, uv, DUALFILTERING_8);
+}
 float4 Blur8(float2 uv) {
 	return tex2D(sBlur8px, uv);
 }
+#ifndef DUALFILTERING_ENABLE_16PX
+	#define DUALFILTERING_ENABLE_16PX 1
+#endif
+#if DUALFILTERING_ENABLE_16PX == 1
+texture2D tBlurDownUp16 <
+	pooled = true;
+> {
+	Width = BUFFER_WIDTH / 16;
+	Height = BUFFER_HEIGHT / 16;
+	MipLevels = 1;
+	Format = RGB10A2;
+};
+sampler2D sBlurDownUp16 {
+	Texture = tBlurDownUp16;
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+	MinLOD = 0.0f;
+	MaxLOD = 0.0f;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
+texture2D tBlur16px <
+	pooled = true;
+> {
+	Width = BUFFER_WIDTH;
+	Height = BUFFER_HEIGHT;
+	MipLevels = 1;
+	Format = RGB10A2;
+};
+sampler2D sBlur16px {
+	Texture = tBlur16px;
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+	MinLOD = 0.0f;
+	MaxLOD = 0.0f;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
+float4 PassBlurDown16(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
+	return DualFilteringDown(sBlurDownUp8, uv, DUALFILTERING_8);
+}
+float4 PassBlurUp16(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
+	return DualFilteringUp(sBlurDownUp16, uv, DUALFILTERING_16);
+}
+float4 Blur16(float2 uv) {
+	return tex2D(sBlur8px, uv);
+}
+#endif
+#endif
+#endif
+#endif
 
 technique DualFilteringBlur <
 	enabled = true;
 	hidden = true;
 > {
+	#if DUALFILTERING_ENABLE_2PX == 1
 	pass BlurDown2 {
 		RenderTarget = tBlurDownUp2;
 		ClearRenderTargets = false;
@@ -231,6 +296,7 @@ technique DualFilteringBlur <
         VertexShader = PostProcessVS;
         PixelShader = PassBlurDown2;
 	}
+	#if DUALFILTERING_ENABLE_4PX == 1
 	pass BlurDown4 {
 		RenderTarget = tBlurDownUp4;
 		ClearRenderTargets = false;
@@ -240,6 +306,7 @@ technique DualFilteringBlur <
         VertexShader = PostProcessVS;
         PixelShader = PassBlurDown4;
 	}
+	#if DUALFILTERING_ENABLE_8PX == 1
 	pass BlurDown8 {
 		RenderTarget = tBlurDownUp8;
 		ClearRenderTargets = false;
@@ -249,7 +316,22 @@ technique DualFilteringBlur <
         VertexShader = PostProcessVS;
         PixelShader = PassBlurDown8;
 	}
+	#if DUALFILTERING_ENABLE_16PX == 1
+	pass BlurDown16 {
+		RenderTarget = tBlurDownUp16;
+		ClearRenderTargets = false;
+		BlendEnable = false;
+		StencilEnable = false;
 
+        VertexShader = PostProcessVS;
+        PixelShader = PassBlurDown16;
+	}
+	#endif
+	#endif
+	#endif
+	#endif
+
+	#if DUALFILTERING_ENABLE_2PX == 1
 	pass Blur2 {
 		RenderTarget = tBlur2px;
 		ClearRenderTargets = false;
@@ -259,6 +341,9 @@ technique DualFilteringBlur <
         VertexShader = PostProcessVS;
         PixelShader = PassBlurUp2;
 	}
+	#endif
+
+	#if DUALFILTERING_ENABLE_4PX == 1
 	pass Blur4_4To2 {
 		RenderTarget = tBlurDownUp2;
 		ClearRenderTargets = false;
@@ -277,6 +362,9 @@ technique DualFilteringBlur <
         VertexShader = PostProcessVS;
         PixelShader = PassBlurUp2;
 	}
+	#endif
+
+	#if DUALFILTERING_ENABLE_8PX == 1
 	pass Blur8_8To4 {
 		RenderTarget = tBlurDownUp4;
 		ClearRenderTargets = false;
@@ -304,4 +392,44 @@ technique DualFilteringBlur <
         VertexShader = PostProcessVS;
         PixelShader = PassBlurUp2;
 	}
+	#endif
+
+	#if DUALFILTERING_ENABLE_16PX == 1
+	pass Blur16_16To8 {
+		RenderTarget = tBlurDownUp8;
+		ClearRenderTargets = false;
+		BlendEnable = false;
+		StencilEnable = false;
+
+        VertexShader = PostProcessVS;
+        PixelShader = PassBlurUp16;
+	}
+	pass Blur16_8To4 {
+		RenderTarget = tBlurDownUp4;
+		ClearRenderTargets = false;
+		BlendEnable = false;
+		StencilEnable = false;
+
+        VertexShader = PostProcessVS;
+        PixelShader = PassBlurUp8;
+	}
+	pass Blur16_4To2 {
+		RenderTarget = tBlurDownUp2;
+		ClearRenderTargets = false;
+		BlendEnable = false;
+		StencilEnable = false;
+
+        VertexShader = PostProcessVS;
+        PixelShader = PassBlurUp4;
+	}
+	pass Blur16 {
+		RenderTarget = tBlur16px;
+		ClearRenderTargets = false;
+		BlendEnable = false;
+		StencilEnable = false;
+
+        VertexShader = PostProcessVS;
+        PixelShader = PassBlurUp2;
+	}
+	#endif
 }
