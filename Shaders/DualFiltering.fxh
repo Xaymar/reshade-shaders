@@ -28,9 +28,7 @@
 	#define DUALFILTERING_ENABLE_2PX 1
 #endif
 #if DUALFILTERING_ENABLE_2PX == 1
-texture2D tBlur2px <
-	pooled = true;
-> {
+texture2D tBlur2px {
 	Width = BUFFER_WIDTH;
 	Height = BUFFER_HEIGHT;
 	MipLevels = 1;
@@ -56,9 +54,7 @@ float4 Blur2(float2 uv) {
 	#define DUALFILTERING_ENABLE_4PX 1
 #endif
 #if DUALFILTERING_ENABLE_4PX == 1
-texture2D tBlur4px <
-	pooled = true;
-> {
+texture2D tBlur4px {
 	Width = BUFFER_WIDTH;
 	Height = BUFFER_HEIGHT;
 	MipLevels = 1;
@@ -84,9 +80,7 @@ float4 Blur4(float2 uv) {
 	#define DUALFILTERING_ENABLE_8PX 1
 #endif
 #if DUALFILTERING_ENABLE_8PX == 1
-texture2D tBlur8px <
-	pooled = true;
-> {
+texture2D tBlur8px {
 	Width = BUFFER_WIDTH;
 	Height = BUFFER_HEIGHT;
 	MipLevels = 1;
@@ -112,9 +106,7 @@ float4 Blur8(float2 uv) {
 	#define DUALFILTERING_ENABLE_16PX 1
 #endif
 #if DUALFILTERING_ENABLE_16PX == 1
-texture2D tBlur16px <
-	pooled = true;
-> {
+texture2D tBlur16px {
 	Width = BUFFER_WIDTH;
 	Height = BUFFER_HEIGHT;
 	MipLevels = 1;
