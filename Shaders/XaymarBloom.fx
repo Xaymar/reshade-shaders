@@ -46,9 +46,9 @@ uniform float pStrength <
 uniform float pDechromaStrength <
 	ui_type = "slider";
 	ui_label = "De-Chroma Strength";
-	ui_min = 0.0; ui_max = 10.0;
+	ui_min = -2.0; ui_max = 2.0;
 	ui_step = 0.001;
-> = 1.0;
+> = 0.25;
 uniform float pThreshold <
 	ui_type = "slider";
 	ui_label = "Threshold";
@@ -88,6 +88,15 @@ uniform float pLayer4Strength <
 	ui_min = 0.0; ui_max = 1.0;
 	ui_step = 0.001;
 > = 0.25;
+#if DUALFILTERING_ENABLE_32PX == 1
+uniform float pLayer5Strength <
+	ui_category = "Layers";
+	ui_type = "slider";
+	ui_label = "Layer 5 Strength";
+	ui_min = 0.0; ui_max = 1.0;
+	ui_step = 0.001;
+> = 0.25;
+#endif
 #endif
 #endif
 #endif
@@ -97,18 +106,28 @@ uniform float pLayer4Strength <
 #define DEBUG_BLUR2_RGB 1
 #define DEBUG_BLUR2_YUV 2
 #define DEBUG_BLUR2_WEIGHT 3
+#define DEBUG_BLUR2_FINAL 4
 #if DUALFILTERING_ENABLE_4PX == 1
-#define DEBUG_BLUR4_RGB 4
-#define DEBUG_BLUR4_YUV 5
-#define DEBUG_BLUR4_WEIGHT 6
+#define DEBUG_BLUR4_RGB 5
+#define DEBUG_BLUR4_YUV 6
+#define DEBUG_BLUR4_WEIGHT 7
+#define DEBUG_BLUR4_FINAL 8
 #if DUALFILTERING_ENABLE_8PX == 1
-#define DEBUG_BLUR8_RGB 7
-#define DEBUG_BLUR8_YUV 8
-#define DEBUG_BLUR8_WEIGHT 9
+#define DEBUG_BLUR8_RGB 9
+#define DEBUG_BLUR8_YUV 10
+#define DEBUG_BLUR8_WEIGHT 11
+#define DEBUG_BLUR8_FINAL 12
 #if DUALFILTERING_ENABLE_16PX == 1
-#define DEBUG_BLUR16_RGB 10
-#define DEBUG_BLUR16_YUV 11
-#define DEBUG_BLUR16_WEIGHT 12
+#define DEBUG_BLUR16_RGB 13
+#define DEBUG_BLUR16_YUV 14
+#define DEBUG_BLUR16_WEIGHT 15
+#define DEBUG_BLUR16_FINAL 16
+#if DUALFILTERING_ENABLE_32PX == 1
+#define DEBUG_BLUR32_RGB 17
+#define DEBUG_BLUR32_YUV 18
+#define DEBUG_BLUR32_WEIGHT 19
+#define DEBUG_BLUR32_FINAL 20
+#endif
 #endif
 #endif
 #endif
@@ -122,18 +141,28 @@ uniform int pDebug <
 		"Blur 2 RGB\0"
 		"Blur 2 YUV\0"
 		"Blur 2 Weight\0"
+		"Blur 2 Final\0"
 #if DUALFILTERING_ENABLE_4PX == 1
 		"Blur 4 RGB\0"
 		"Blur 4 YUV\0"
 		"Blur 4 Weight\0"
+		"Blur 4 Final\0"
 #if DUALFILTERING_ENABLE_8PX == 1
 		"Blur 8 RGB\0"
 		"Blur 8 YUV\0"
 		"Blur 8 Weight\0"
+		"Blur 8 Final\0"
 #if DUALFILTERING_ENABLE_16PX == 1
 		"Blur 16 RGB\0"
 		"Blur 16 YUV\0"
 		"Blur 16 Weight\0"
+		"Blur 16 Final\0"
+#if DUALFILTERING_ENABLE_32PX == 1
+		"Blur 32 RGB\0"
+		"Blur 32 YUV\0"
+		"Blur 32 Weight\0"
+		"Blur 32 Final\0"
+#endif
 #endif
 #endif
 #endif
@@ -143,10 +172,14 @@ uniform int pDebug <
 > = 0;
 
 float realistic_brightness_curve(float v) {
-	// Apply Threshold
-	v = clamp(v - pThreshold, 0., 1.) / max(1. - pThreshold, .000001);
+	// Exponentialize.
+	v = sqrt(v);
+	v = sqrt(v);
 
-	// Create an inverse curve that is initially weak, but then picks up fast.
+	// Threshold
+	v = smoothstep(pThreshold, 1., v);
+
+	// Linearize
 	v *= v;
 	v *= v;
 
@@ -154,12 +187,20 @@ float realistic_brightness_curve(float v) {
 }
 
 float4 ApplyBloom(inout float4 rgba, out float4 yuva, inout float weight) {
+
+	// Luma Weight
 	yuva = RGBAtoYUVAf(rgba, RGB_YUV_709);
 	weight = realistic_brightness_curve(yuva.r) * weight;
 
-	yuva.gb *= clamp(1. - weight * pDechromaStrength, 0., 1.);
+	// De-Chroma
+	yuva.gb *= (1. - saturate(pDechromaStrength * weight));
 	rgba = YUVAtoRGBAf(yuva, YUV_709_RGB);
+
 	return rgba * weight * pStrength;
+}
+
+float4 blend_screen4(float4 a, float4 b) {
+	return (1 - ((1. - a) * (1. - b)));
 }
 
 float4 Bloom(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
@@ -171,13 +212,15 @@ float4 Bloom(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 		float4 rgba = Blur2(uv);
 		float4 yuva;
 		float4 final = ApplyBloom(rgba, yuva, weight);
-		v += final;
+		v = blend_screen4(v, final);
 		if (pDebug == DEBUG_BLUR2_RGB) {
-			return final;
+			return rgba;
 		} else if (pDebug == DEBUG_BLUR2_YUV) {
 			return yuva;
 		} else if (pDebug == DEBUG_BLUR2_WEIGHT) {
 			return weight;
+		} else if (pDebug == DEBUG_BLUR2_FINAL) {
+			return final;
 		}
 	}
 #endif
@@ -187,13 +230,15 @@ float4 Bloom(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 		float4 rgba = Blur4(uv);
 		float4 yuva;
 		float4 final = ApplyBloom(rgba, yuva, weight);
-		v += final;
+		v = blend_screen4(v, final);
 		if (pDebug == DEBUG_BLUR4_RGB) {
-			return final;
+			return rgba;
 		} else if (pDebug == DEBUG_BLUR4_YUV) {
 			return yuva;
 		} else if (pDebug == DEBUG_BLUR4_WEIGHT) {
 			return weight;
+		} else if (pDebug == DEBUG_BLUR4_FINAL) {
+			return final;
 		}
 	}
 #endif
@@ -203,13 +248,15 @@ float4 Bloom(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 		float4 rgba = Blur8(uv);
 		float4 yuva;
 		float4 final = ApplyBloom(rgba, yuva, weight);
-		v += final;
+		v = blend_screen4(v, final);
 		if (pDebug == DEBUG_BLUR8_RGB) {
-			return final;
+			return rgba;
 		} else if (pDebug == DEBUG_BLUR8_YUV) {
 			return yuva;
 		} else if (pDebug == DEBUG_BLUR8_WEIGHT) {
 			return weight;
+		} else if (pDebug == DEBUG_BLUR8_FINAL) {
+			return final;
 		}
 	}
 #endif
@@ -219,13 +266,33 @@ float4 Bloom(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 		float4 rgba = Blur16(uv);
 		float4 yuva;
 		float4 final = ApplyBloom(rgba, yuva, weight);
-		v += final;
+		v = blend_screen4(v, final);
 		if (pDebug == DEBUG_BLUR16_RGB) {
-			return final;
+			return rgba;
 		} else if (pDebug == DEBUG_BLUR16_YUV) {
 			return yuva;
 		} else if (pDebug == DEBUG_BLUR16_WEIGHT) {
 			return weight;
+		} else if (pDebug == DEBUG_BLUR16_FINAL) {
+			return final;
+		}
+	}
+#endif
+#if DUALFILTERING_ENABLE_32PX == 1
+	{
+		float weight = pLayer5Strength;
+		float4 rgba = Blur32(uv);
+		float4 yuva;
+		float4 final = ApplyBloom(rgba, yuva, weight);
+		v = blend_screen4(v, final);
+		if (pDebug == DEBUG_BLUR32_RGB) {
+			return rgba;
+		} else if (pDebug == DEBUG_BLUR32_YUV) {
+			return yuva;
+		} else if (pDebug == DEBUG_BLUR32_WEIGHT) {
+			return weight;
+		} else if (pDebug == DEBUG_BLUR32_FINAL) {
+			return final;
 		}
 	}
 #endif
