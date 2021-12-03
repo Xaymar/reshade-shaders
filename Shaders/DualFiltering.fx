@@ -28,12 +28,14 @@
 #include "ReShade.fxh"
 #include "ReShadeUI.fxh"
 #include "DualFiltering.fxh"
+#include "Dither.fxh"
 
 #define DUALFILTERING_1 (float2(BUFFER_RCP_WIDTH, BUFFER_RCP_HEIGHT))
 #define DUALFILTERING_2 (float2(BUFFER_RCP_WIDTH, BUFFER_RCP_HEIGHT) * 2)
 #define DUALFILTERING_4 (float2(BUFFER_RCP_WIDTH, BUFFER_RCP_HEIGHT) * 4)
 #define DUALFILTERING_8 (float2(BUFFER_RCP_WIDTH, BUFFER_RCP_HEIGHT) * 8)
 #define DUALFILTERING_16 (float2(BUFFER_RCP_WIDTH, BUFFER_RCP_HEIGHT) * 16)
+#define DUALFILTERING_32 (float2(BUFFER_RCP_WIDTH, BUFFER_RCP_HEIGHT) * 32)
 
 float4 DualFilteringDown(sampler2D tex, float2 uv, float2 halfTexel) {
 	float4 pxCC = tex2D(tex, uv) * 4.0;
@@ -42,6 +44,7 @@ float4 DualFilteringDown(sampler2D tex, float2 uv, float2 halfTexel) {
 	float4 pxBL = tex2D(tex, uv + float2(halfTexel.x, -halfTexel.y));
 	float4 pxBR = tex2D(tex, uv - float2(halfTexel.x, -halfTexel.y));
 	float4 v = (pxCC + pxTL + pxTR + pxBL + pxBR) / 8.0;
+	v = dither(v, uv, 256., false);
 	v.a = 1.0;
 	return v;
 }
@@ -62,6 +65,7 @@ float4 DualFilteringUp(sampler2D tex, float2 uv, float2 halfTexel) {
 	float4 v0 = (pxTL + pxTR + pxBL + pxBR) * 2.;
 	float4 v1 = (pxL + pxR + pxT + pxB);
 	float4 v = (v0 + v1) / 12.;
+	v = dither(v, uv, 256., false);
 	v.a = 1.0;
 	return v;
 }
@@ -189,6 +193,38 @@ float4 PassBlurDown16(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Targe
 float4 PassBlurUp16(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
 	return DualFilteringUp(sBlurDownUp16, uv, DUALFILTERING_16);
 }
+
+#ifndef DUALFILTERING_ENABLE_32PX
+	#define DUALFILTERING_ENABLE_32PX 1
+#endif
+#if DUALFILTERING_ENABLE_32PX == 1
+texture2D tBlurDownUp32 <
+	pooled = true;
+> {
+	Width = BUFFER_WIDTH / 32;
+	Height = BUFFER_HEIGHT / 32;
+	MipLevels = 1;
+	Format = RGB10A2;
+};
+sampler2D sBlurDownUp32 {
+	Texture = tBlurDownUp32;
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+	MinLOD = 0.0f;
+	MaxLOD = 0.0f;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
+float4 PassBlurDown32(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
+	return DualFilteringDown(sBlurDownUp16, uv, DUALFILTERING_32);
+}
+float4 PassBlurUp32(float4 pos : SV_Position, float2 uv : TEXCOORD) : SV_Target {
+	return DualFilteringUp(sBlurDownUp32, uv, DUALFILTERING_32);
+}
+#endif
 #endif
 #endif
 #endif
@@ -238,6 +274,17 @@ technique DualFilteringBlur <
         VertexShader = PostProcessVS;
         PixelShader = PassBlurDown16;
 	}
+	#if DUALFILTERING_ENABLE_32PX == 1
+	pass BlurDown16 {
+		RenderTarget = tBlurDownUp32;
+		ClearRenderTargets = false;
+		BlendEnable = false;
+		StencilEnable = false;
+
+        VertexShader = PostProcessVS;
+        PixelShader = PassBlurDown32;
+	}
+	#endif
 	#endif
 	#endif
 	#endif
@@ -336,6 +383,54 @@ technique DualFilteringBlur <
 	}
 	pass Blur16 {
 		RenderTarget = tBlur16px;
+		ClearRenderTargets = false;
+		BlendEnable = false;
+		StencilEnable = false;
+
+        VertexShader = PostProcessVS;
+        PixelShader = PassBlurUp2;
+	}
+	#endif
+
+	#if DUALFILTERING_ENABLE_32PX == 1
+	pass Blur32_32To16 {
+		RenderTarget = tBlurDownUp16;
+		ClearRenderTargets = false;
+		BlendEnable = false;
+		StencilEnable = false;
+
+        VertexShader = PostProcessVS;
+        PixelShader = PassBlurUp32;
+	}
+	pass Blur32_16To8 {
+		RenderTarget = tBlurDownUp8;
+		ClearRenderTargets = false;
+		BlendEnable = false;
+		StencilEnable = false;
+
+        VertexShader = PostProcessVS;
+        PixelShader = PassBlurUp16;
+	}
+	pass Blur32_8To4 {
+		RenderTarget = tBlurDownUp4;
+		ClearRenderTargets = false;
+		BlendEnable = false;
+		StencilEnable = false;
+
+        VertexShader = PostProcessVS;
+        PixelShader = PassBlurUp8;
+	}
+	pass Blur32_4To2 {
+		RenderTarget = tBlurDownUp2;
+		ClearRenderTargets = false;
+		BlendEnable = false;
+		StencilEnable = false;
+
+        VertexShader = PostProcessVS;
+        PixelShader = PassBlurUp4;
+	}
+	pass Blur32 {
+		RenderTarget = tBlur32px;
 		ClearRenderTargets = false;
 		BlendEnable = false;
 		StencilEnable = false;

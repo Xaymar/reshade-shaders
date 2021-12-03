@@ -125,8 +125,35 @@ sampler2D sBlur16px {
 };
 
 float4 Blur16(float2 uv) {
-	return tex2D(sBlur8px, uv);
+	return tex2D(sBlur16px, uv);
 }
+
+#ifndef DUALFILTERING_ENABLE_32PX
+	#define DUALFILTERING_ENABLE_32PX 1
+#endif
+#if DUALFILTERING_ENABLE_32PX == 1
+texture2D tBlur32px {
+	Width = BUFFER_WIDTH;
+	Height = BUFFER_HEIGHT;
+	MipLevels = 1;
+	Format = RGB10A2;
+};
+sampler2D sBlur32px {
+	Texture = tBlur32px;
+	MagFilter = LINEAR;
+	MinFilter = LINEAR;
+	MipFilter = LINEAR;
+	MinLOD = 0.0f;
+	MaxLOD = 0.0f;
+	AddressU = CLAMP;
+	AddressV = CLAMP;
+	AddressW = CLAMP;
+};
+
+float4 Blur32(float2 uv) {
+	return tex2D(sBlur32px, uv);
+}
+#endif
 #endif
 #endif
 #endif
