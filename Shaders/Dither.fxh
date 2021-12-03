@@ -60,13 +60,15 @@ float _dither_bayer(float2 vpos, int max_level)
 	return finalBayer / finalDivisor;
 }
 
-float4 dither(float4 v, float2 uv, float range) {
+float4 dither(float4 v, float2 uv, float range, bool temporal) {
     float2 xy = uv * float2(BUFFER_WIDTH, BUFFER_HEIGHT);
 
 #if DITHER_ENABLE_PIXEL_FLICKER == 1
-    // Flicker the X and Y coordinates for better dithering.
-    xy.x += _dither_flicker % 2;
-    xy.y += _dither_flicker / 2;
+	if (temporal) {
+		// Flicker the X and Y coordinates for better dithering.
+		xy.x += _dither_flicker % 2;
+		xy.y += _dither_flicker / 2;
+	}
 #endif
 
     // Apply Bayer ditherimg.
@@ -87,4 +89,8 @@ float4 dither(float4 v, float2 uv, float range) {
     vI /= range;
 
 	return vI;
+}
+
+float4 dither(float4 v, float2 uv, float range) {
+	return dither(v, uv, range, true);
 }
