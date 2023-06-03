@@ -25,7 +25,11 @@
 
 // Helpful resources:
 // - Lottes Tonemapper: https://github.com/KhronosGroup/glTF-Compressonator/blob/master/Compressonator/Applications/_Plugins/C3DModel_viewers/glTF_DX12_EX/DX12Util/shaders/Tonemapping.hlsl#L53
-// - Karis Average: https://github.com/github/linguist/blob/master/samples/HLSL/bloom.cginc
+// - Karis Average: 
+//    - https://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
+//    - https://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare
+//    - https://learnopengl.com/Guest-Articles/2022/Phys.-Based-Bloom
+//    - https://github.com/github/linguist/blob/master/samples/HLSL/bloom.cginc
 // - Interleaved Gradient Noise: https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/
 // - https://github.com/GarrettGunnell/AcerolaFX
 // - https://media.contentapi.ea.com/content/dam/eacom/frostbite/files/course-notes-moving-frostbite-to-pbr-v2.pdf
@@ -88,7 +92,9 @@ namespace Xaymar {
 	};
 
 	float4 FlipBackBuffer(float4 vpos : SV_Position, float2 texcoord : TexCoord) : SV_Target {
-		return tex2Dlod(Xaymar::BackBufferTarget, float4(texcoord, 0.0, 0.0));
+		float4 col = tex2Dlod(Xaymar::BackBufferTarget, float4(texcoord, 0.0, 0.0));
+		col.a = 1.;
+		return col;
 	}
 	#define FlipBackBufferPass pass { \
 		VertexShader = PostProcessVS; \
