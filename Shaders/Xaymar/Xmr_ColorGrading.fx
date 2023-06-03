@@ -319,7 +319,7 @@ float4 PS_ColorGrade(float4 pos : SV_Position, float2 texcoord : TEXCOORD) : SV_
     return Xaymar::Dither::DitherIGN(output, XAYMAR_COLOR_VALUES, pos);
 }
 
-technique ColorGrade <
+technique Xaymar_ColorGrade <
     ui_label = "[Xaymar] Color Grading";
 >{
     pass {
