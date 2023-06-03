@@ -140,10 +140,10 @@ float4 Xaymar_BeginProcessing(float4 vpos : SV_Position, float2 texcoord : TexCo
 		
 		// Sample at quarter-turn intervals around the source pixel
 		float3 ref[4] = {
-			tex2Dlod(Xaymar::BackBuffer, float4(mad(pt,                  o, texcoord), 0.0, 0.0)).rgb, // SE
-			tex2Dlod(Xaymar::BackBuffer, float4(mad(pt,                 -o, texcoord), 0.0, 0.0)).rgb, // NW
-			tex2Dlod(Xaymar::BackBuffer, float4(mad(pt, float2(-o.y,  o.x), texcoord), 0.0, 0.0)).rgb, // NE
-			tex2Dlod(Xaymar::BackBuffer, float4(mad(pt, float2( o.y, -o.x), texcoord), 0.0, 0.0)).rgb  // SW
+			tex2Dlod(ReShade::BackBuffer, float4(mad(pt,                  o, texcoord), 0.0, 0.0)).rgb, // SE
+			tex2Dlod(ReShade::BackBuffer, float4(mad(pt,                 -o, texcoord), 0.0, 0.0)).rgb, // NW
+			tex2Dlod(ReShade::BackBuffer, float4(mad(pt, float2(-o.y,  o.x), texcoord), 0.0, 0.0)).rgb, // NE
+			tex2Dlod(ReShade::BackBuffer, float4(mad(pt, float2( o.y, -o.x), texcoord), 0.0, 0.0)).rgb  // SW
 		};
 
 		// Calculate weber ratio
@@ -204,6 +204,9 @@ float4 Xaymar_BeginProcessing(float4 vpos : SV_Position, float2 texcoord : TexCo
 		color.rgb = Xaymar::Tonemapping::ReinhardRCP(color.rgb);
 	}
 
+	// Ensure Alpha is 1.0
+	color.a = 1.;
+
 	return color;
 }
 technique Xaymar_BeginProcessing <
@@ -230,6 +233,9 @@ float4 Xaymar_EndProcessing(float4 vpos : SV_Position, float2 texcoord : TexCoor
 	} else if (Tonemapper == 1) { // Reinhard
 		color.rgb = Xaymar::Tonemapping::Reinhard(color.rgb);
 	}
+
+	// Ensure Alpha is 1.0
+	color.a = 1.;
 
 	// Dithering
 	return Xaymar::Dither::DitherBayer(color, pow(2, BUFFER_COLOR_BIT_DEPTH), vpos);
